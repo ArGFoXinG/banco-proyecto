@@ -9,23 +9,42 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
+import os # importo os para poder usar la variable de entorno BASE_DIR
 from pathlib import Path
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Lee el archivo .env de la raíz del proyecto, si existe, y deja sus valores
+# disponibles como variables de entorno. Lo que ya venga del sistema o de Docker
+# tiene prioridad: el .env nunca pisa una variable que ya estaba definida.
+
+load_dotenv(BASE_DIR / ".env") # Lee el archivo .env de la raíz del proyecto, si existe, y deja sus valores
+
+def env(name, default=None):
+    """Lee una variable de entorno y la devuelve. Si no existe, devuelve el valor por defecto."""
+    return os.getenv(name, default)
+
+def env_bool(name, default=False):
+    """Lee una variable de entorno y la devuelve como booleano. Si no existe, devuelve el valor por defecto."""
+    return env(name, str(int(default))).strip().lower() in {"1", "true", "yes", "on"}
+
+
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-qv0c4@k8h4st2(mubi3v2pk^97q0qzlq30bx-+zh#qur#g7u6u'
+SECRET_KEY = env("SECRET_KEY", "cambia-esta-clave-en-desarrollo")
+JWT_SECRET_KEY = env("JWT_SECRET_KEY", "clave-jwt-desarrollo-super-segura-12345")
+JWT_ALGORITHM = "HS256"
+ACCESS_TOKEN_MINUTES = int(env("ACCESS_TOKEN_MINUTES", "60"))
+REFRESH_TOKEN_DAYS = int(env("REFRESH_TOKEN_DAYS", "7"))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+DEBUG = env_bool("DEBUG", True)
+ALLOWED_HOSTS = [host.strip() for host in env("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
 
 
 # Application definition
@@ -42,9 +61,15 @@ DJANGO_APPS = [
 EXTERNAL_APPS = [
     "ninja",
 ]
-
+# Una app por cada cosa distinta que resuelve el sistema. El orden de la lista
+# no cambia el funcionamiento, pero conviene escribirlas de la que no depende de
+# nadie a la que depende de todas: es el mismo orden en el que se construyen.
 LOCAL_APPS = [
     "apps.accounts.apps.AccountsConfig",
+    "apps.catalogs.apps.CatalogsConfig",
+    "apps.institutions.apps.InstitutionsConfig",
+    "apps.academics.apps.AcademicsConfig",
+    "apps.projects.apps.ProjectsConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + LOCAL_APPS
@@ -78,6 +103,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'CampusLab.wsgi.application'
 
+sqlite_path = Path(env("SQLITE_PATH", BASE_DIR / "data" / "db.sqlite3"))
+sqlite_path.parent.mkdir(parents=True, exist_ok=True)  # Crea la carpeta si no existe
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -85,7 +112,7 @@ WSGI_APPLICATION = 'CampusLab.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': sqlite_path,
     }
 }
 
@@ -112,9 +139,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-ar'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "America/Argentina/Buenos_Aires"
 
 USE_I18N = True
 
@@ -125,3 +152,18 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / "media"
+
+AUTH_USER_MODEL = "accounts.User"  # Aquí se define el modelo de usuario personalizado
+
+# En desarrollo los emails se imprimen en la consola del servidor: se ve el
+# envio sin configurar un servidor de correo. En produccion se cambia el
+# backend por SMTP con las credenciales reales, via variables de entorno.
+
+EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "no-responder@bancodeproyectos.edu.ar")
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
