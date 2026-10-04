@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
-from apps.accounts.managers import UserManager
+from apps.accounts.manage import UserManager
 
 # Create your models here.
 class UserRole(models.TextChoices):
