@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 import os # importo os para poder usar la variable de entorno BASE_DIR
 from pathlib import Path
+from dotenv import load_dotenv
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -66,10 +67,10 @@ EXTERNAL_APPS = [
 # nadie a la que depende de todas: es el mismo orden en el que se construyen.
 LOCAL_APPS = [
     "apps.accounts.apps.AccountsConfig",
-    "apps.catalogs.apps.CatalogsConfig",
-    "apps.institutions.apps.InstitutionsConfig",
-    "apps.academics.apps.AcademicsConfig",
-    "apps.projects.apps.ProjectsConfig",
+    #"apps.catalogs.apps.CatalogsConfig",
+    #"apps.institutions.apps.InstitutionsConfig",
+    #"apps.academics.apps.AcademicsConfig",
+    #"apps.projects.apps.ProjectsConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + LOCAL_APPS
